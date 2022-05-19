@@ -1,0 +1,55 @@
+# Logitech HD Webcam C270
+
+#==============#
+# Camera Model #
+#==============#
+
+Camera:
+  name: "Logitech HD Webcam C270"
+  setup: "monocular"
+  model: "perspective"
+
+  fx: 818.952
+  fy: 818.776
+  cx: 324.049
+  cy: 248.898
+
+  k1: 0.11601483894954116
+  k2: -0.24084693054945908
+  p1: -0.000573446527301056
+  p2: 0.00003540985648916922
+  k3: 0.47521266990549543
+
+  fps: 16.0
+  cols: 1280
+  rows: 720
+
+  color_order: "RGB"
+
+
+#=====================#
+# Tracking Parameters #
+#=====================#
+
+Preprocessing:
+  max_num_keypoints: 1000
+  ini_max_num_keypoints: 2000
+
+#================#
+# ORB Parameters #
+#================#
+
+Feature:
+  name: "default ORB feature extraction setting"
+  scale_factor: 1.2
+  num_levels: 8
+  ini_fast_threshold: 20
+  min_fast_threshold: 7
+
+#====================#
+# Mapping Parameters #
+#====================#
+
+Mapping:
+  baseline_dist_thr_ratio: 0.02
+  redundant_obs_ratio_thr: 0.9
