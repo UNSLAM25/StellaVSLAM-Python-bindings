@@ -1,14 +1,14 @@
 # StellaVSLAM-Python-bindings
-Python bindings for [StellaVSLAM](https://github.com/StellaVSLAM-Community/stellavslam), an ORB based visual SLAM similar to ORB-SLAM2.
+Python bindings for [StellaVSLAM](https://github.com/stella-cv/stella_vslam), an ORB based visual SLAM similar to ORB-SLAM2.
 
-By compiling the provided cpp file, you get the module **stellavslam** that let you control stellavslam'system from Python. StellaVSLAM must be already installed in your system.  You'll be able to run stellavslam, load & save maps, feed images and get the pose matrix.
+By compiling the provided cpp file, you get the module **stellavslam** that let you control stellavslam' system from Python. StellaVSLAM must be already installed in your system.  You'll be able to run stellavslam, load & save maps, feed images and get the pose matrix.
 
 Right now no bindings for viewers are provided, so do not expect to see the 3D map nor the features over the image.
 
 ## Building the bindings
 In order to get a **stellavslam** module you can import from Python, you need to:
 
-* install [StellaVSLAM](https://github.com/StellaVSLAM-Community/stellavslam)
+* install [StellaVSLAM](https://stella-cv.readthedocs.io/en/latest/installation.html#chapter-installation)
 * install [PyBind11](https://github.com/pybind/pybind11)
   * like ```pip install pybind11```
 * compile _stellavslam-bindings.cpp_ 
@@ -39,7 +39,7 @@ Two tests are available in Python.
 
 _test1.py_ is a minimal proof of operation, it starts and shuts down stellavslam.  A random _config.yaml_ file is provided in this project to facilitate this test.  Don't rest until you get this test running without errors.
 
-_test2.py_ is a more complete demo, inspired in [run_video_slam](https://github.com/StellaVSLAM-Community/stellavslam/blob/main/example/run_video_slam.cc) example.  You'll need a video with the right config.yaml.  You can download them from the [datasets stellavslam made public](https://stellavslam-community.readthedocs.io/en/latest/simple_tutorial.html#equirectangular-datasets).  Here are the direct links:
+_test2.py_ is a more complete demo, inspired in [run_video_slam](https://github.com/stella-cv/stella_vslam/blob/main/example/run_video_slam.cc) example.  You'll need a video with the right config.yaml.  You can download them from the [datasets stellavslam made public](https://stella-cv.readthedocs.io/en/latest/example.html#section-example-standard-datasets).  Here are the direct links:
 
 * [omnidirectional camera dataset (equirectanulgar)](https://drive.google.com/drive/folders/1A_gq8LYuENePhNHsuscLZQPhbJJwzAq4)
 * [fisheye camera dataset](https://drive.google.com/drive/folders/1SVDsgz-ydm1pAbrdmhRQTmWhJnUl_xr8)
