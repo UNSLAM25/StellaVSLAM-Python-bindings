@@ -8,7 +8,7 @@ sudo ln -s /usr/local/include/eigen3/Eigen /usr/include/Eigen
 
 Modificacion del comando para que se pueda ejecutar con stella_vslam:
 
-/usr/bin/g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) -I/usr/local/include/stella_vslam/3rd/json/include/ /home/squiro/Desktop/StellaVSLAM-Python-bindings/stellavslam_bindings.cpp -o stella_vslam$(python3-config --extension-suffix) -lstella_vslam 
+/usr/bin/g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) -I/usr/local/include/stella_vslam/3rd/json/include/ -I/usr/local/include/stella_vslam/3rd/spdlog/include -I/usr/local/include/eigen3 -I/usr/local/include/opencv4 -I/usr/local/include/opencv2 -I/usr/local/include/pangolin ./stellavslam_bindings.cpp -o stella_vslam$(python3-config --extension-suffix) -lstella_vslam 
 
 --
 

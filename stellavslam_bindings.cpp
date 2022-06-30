@@ -1,16 +1,19 @@
-#include "stella_vslam/system.h"
-#include "stella_vslam/config.h"
-#include "stella_vslam/publish/frame_publisher.h"
-#include "stella_vslam/publish/map_publisher.h"
-#include "stella_vslam/type.h"
+#include <Python.h>
+// #include <stella_vslam/type.h>
+#include <stella_vslam/system.h>
+#include <stella_vslam/config.h>
+#include <stella_vslam/publish/map_publisher.h>
+#include <stella_vslam/publish/frame_publisher.h>
+#include <pangolin_viewer/viewer.h>
 #include "pybind11/stl.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
-#include "nlohmann/json_fwd.hpp"
-#include "opencv2/core/core.hpp"
+// #include "nlohmann/json_fwd.hpp"
 #include "yaml-cpp/yaml.h"
-#include <Python.h>
+#include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
+#include <opencv2/core/utility.hpp>
+#include <opencv2/core/core.hpp>
 
 namespace py = pybind11;
 
@@ -98,7 +101,7 @@ catch (const cv::Exception &e){PyErr_SetString(opencv_error, e.what()); return 0
 
 using namespace cv;
 
-class NumpyAllocator : public MatAllocator{
+class NumpyAllocator : public MatAllocator {
 public:
     NumpyAllocator(){stdAllocator = Mat::getStdAllocator();}
     ~NumpyAllocator(){}
@@ -345,7 +348,8 @@ PYBIND11_MODULE(stella_vslam, m){
 
     py::class_<config, std::shared_ptr<config>>(m, "config")
         .def(py::init<const std::string&>(), py::arg("config_file_path"))
-        .def(py::init<const YAML::Node&, const std::string&>(), py::arg("yaml_node"), py::arg("config_file_path") = "");
+        .def(py::init<const YAML::Node&, const std::string&>(), py::arg("yaml_node"), py::arg("config_file_path") = "")
+        .def_readonly("yaml_node_", &config::yaml_node_);
 
     py::class_<stella_vslam::system>(m, "system")
         // Init & finish
@@ -398,6 +402,10 @@ PYBIND11_MODULE(stella_vslam, m){
         .def("save_frame_trajectory", &system::save_frame_trajectory, py::arg("path"), py::arg("format"))
         .def("save_keyframe_trajectory", &system::save_keyframe_trajectory, py::arg("path"), py::arg("format"))
 
+        // Frame and map publishers
+        .def("get_map_publisher", &system::get_map_publisher)
+        .def("get_frame_publisher", &system::get_frame_publisher)
+
         // System controls
         .def("mapping_module_is_enabled", &system::mapping_module_is_enabled)
         .def("enable_mapping_module", &system::enable_mapping_module)
@@ -419,5 +427,35 @@ PYBIND11_MODULE(stella_vslam, m){
 
         .def("terminate_is_requested", &system::terminate_is_requested)
         .def("request_terminate", &system::request_terminate)
+
+        .def("yaml_optional_ref", &stella_vslam::util::yaml_optional_ref)
         ;
+
+    py::class_<pangolin_viewer::viewer>(m, "viewer")
+        .def(py::init<const YAML::Node&, stella_vslam::system*, const std::shared_ptr<stella_vslam::publish::frame_publisher>&, 
+            const std::shared_ptr<stella_vslam::publish::map_publisher>&>(), 
+            py::arg("yaml_node"), py::arg("system"), py::arg("frame_publisher"), py::arg("map_publisher"))
+        
+        .def("run", &pangolin_viewer::viewer::run)
+        .def("request_terminate", &pangolin_viewer::viewer::request_terminate);
+
+    py::class_<YAML::Node>(m, "YamlNode")
+        .def(py::init<const std::string &>())
+        .def("__getitem__",
+            [](const YAML::Node node, const std::string& key){
+              return node[key];
+            })
+        .def("__iter__",
+            [](const YAML::Node &node) {
+              return py::make_iterator(node.begin(), node.end());},
+             py::keep_alive<0, 1>())
+        .def("__str__",
+             [](const YAML::Node& node) {
+               YAML::Emitter out;
+               out << node;
+               return std::string(out.c_str());
+             })
+        .def("type", &YAML::Node::Type)
+        .def("__len__", &YAML::Node::size)
+        ;      
 }
