@@ -363,11 +363,11 @@ PYBIND11_MODULE(stella_vslam, m){
         .def(py::init<const std::shared_ptr<config>&, const std::string&>(), py::arg("cfg"), py::arg("vocab_file_path"))
         .def("startup", &system::startup, py::arg("need_initialize") = true)
         .def("shutdown", &system::shutdown)
-
-        // Feed image
-        // .def("feed_monocular_frame", &system::feed_monocular_frame, py::arg("img"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
-        .def("feed_monocular_frame", [](stella_vslam::system &self, const cv::Mat &img, const double timestamp, const cv::Mat& mask = cv::Mat{}) { 
+        
+        .def("feed_monocular_frame", [](stella_vslam::system &self, const cv::Mat &img, const double timestamp, const cv::Mat& mask = cv::Mat{}) {
+                py::gil_scoped_release release; 
                 std::shared_ptr<Mat44_t> matrix = self.feed_monocular_frame(img, timestamp, mask); 
+                py::gil_scoped_acquire acquire;
                 if (matrix)
                     return *matrix;
                 else 
@@ -379,7 +379,9 @@ PYBIND11_MODULE(stella_vslam, m){
             py::arg("img"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
         
         .def("feed_stereo_frame", [](stella_vslam::system &self, const cv::Mat &left_img, const cv::Mat &right_img, const double timestamp, const cv::Mat& mask = cv::Mat{}) { 
+                py::gil_scoped_release release;
                 std::shared_ptr<Mat44_t> matrix = self.feed_stereo_frame(left_img, right_img, timestamp, mask); 
+                py::gil_scoped_acquire acquire;
                 if (matrix)
                     return *matrix;
                 else 
@@ -391,7 +393,9 @@ PYBIND11_MODULE(stella_vslam, m){
             py::arg("left_img"), py::arg("right_img"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
         
         .def("feed_RGBD_frame", [](stella_vslam::system &self, const cv::Mat &rgb_img, const cv::Mat &depthmap, const double timestamp, const cv::Mat& mask = cv::Mat{}) { 
+                py::gil_scoped_release release;
                 std::shared_ptr<Mat44_t> matrix = self.feed_RGBD_frame(rgb_img, depthmap, timestamp, mask); 
+                py::gil_scoped_acquire acquire;
                 if (matrix)
                     return *matrix;
                 else 
@@ -434,34 +438,17 @@ PYBIND11_MODULE(stella_vslam, m){
 
         .def("terminate_is_requested", &system::terminate_is_requested)
         .def("request_terminate", &system::request_terminate)
-
-        // .def("yaml_optional_ref", &stella_vslam::util::yaml_optional_ref)
         ;
 
-    // py::class_<data::map_database>(m, "map_database")
-    //     .def(py::init<>())
-    //     ;
-
-    // py::class_<publish::map_publisher>(m, "map_publisher")
-    //     .def(py::init<const std::shared_ptr<config>&, data::map_database*>(), py::arg("cfg"), py::arg("map_db"))
-    //     ;
-
-    // py::class_<publish::frame_publisher>(m, "frame_publisher")
-    //     .def(py::init<const std::shared_ptr<config>&, data::map_database*, const unsigned int>(), py::arg("cfg"), py::arg("map_db"), 
-    //     py::arg("img_width") = 1024)
-    //     ;
-
     py::class_<pangolin_viewer::viewer>(m, "viewer")
-        // const YAML::Node&, stella_vslam::system*, const std::shared_ptr<stella_vslam::publish::frame_publisher>&, const std::shared_ptr<stella_vslam::publish::map_publisher>&
-        // .def(py::init(&createViewerInstance), 
-        
-        //     py::arg("yaml_node"), py::arg("system"), py::arg("frame_publisher"), py::arg("map_publisher"))
         .def(py::init([](const YAML::Node& yaml_node_, stella_vslam::system* SLAM)  
         {  
             return new pangolin_viewer::viewer(yaml_node_, SLAM, SLAM->get_frame_publisher(), SLAM->get_map_publisher());;
         }))
         
-        .def("run", &pangolin_viewer::viewer::run)
+        // https://stackoverflow.com/questions/60410178/how-to-invoke-python-function-as-a-callback-inside-c-thread-using-pybind11
+        // Python GIL pervents us from parallelizing SLAM and the viewer using threads. We allow parallelization by adding a call guard
+        .def("run", &pangolin_viewer::viewer::run, py::call_guard<py::gil_scoped_release>())
         .def("request_terminate", &pangolin_viewer::viewer::request_terminate);
 
     py::class_<YAML::Node>(m, "YamlNode")

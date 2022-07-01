@@ -77,6 +77,6 @@ slamThreadInstance = Thread(target=run_slam)
 
 slamThreadInstance.start()
 VIEWER.run()
-# slamThreadInstance.join()
+slamThreadInstance.join()
 
 SLAM.shutdown()
