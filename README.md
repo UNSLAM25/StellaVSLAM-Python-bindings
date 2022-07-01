@@ -15,13 +15,13 @@ In order to get a **stellavslam** module you can import from Python, you need to
   * like ```pip install pybind11```
 * compile _stellavslam-bindings.cpp_ 
 
-This is an example of command line compilation in Linux:
+A makefile is included to simplify the compilation process. You can (or should) modify it in the following cases:
 
-    /usr/bin/g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) -I/usr/local/include/stellavslam/3rd/json/include -DUSE_DBOW2 ./stellavslam_bindings.cpp -o stellavslam$(python3-config --extension-suffix) -lstellavslam
+* If you have OpenCV version 4 or greater installed, add the following include directory
+    -I/usr/local/include/opencv4
 
-In this command line you can remove -DUSE_DBOW2 if you don't want to use DBoW2, and use fbow instead:
-
-    /usr/bin/g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3 -m pybind11 --includes) -I/usr/local/include/stella_vslam/3rd/json/include/./stellavslam_bindings.cpp -o stella_vslam$(python3-config --extension-suffix) -lstella_vslam 
+* If you plan on using DBOW2, add the following parameter in CXXFLAGS:
+    -DUSE_DBOW2
 
 The result of the compilation process is a module in a form of a shared library, like:
 

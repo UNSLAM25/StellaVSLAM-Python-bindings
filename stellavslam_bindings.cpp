@@ -337,6 +337,13 @@ PyObject* NDArrayConverter::toNDArray(const cv::Mat& m){
     return o;
 }
 
+// pangolin_viewer::viewer createViewerInstance(const YAML::Node& yaml_node_, stella_vslam::system* SLAM)
+// {
+//     pangolin_viewer::viewer viewer(yaml_node_, SLAM, SLAM->get_frame_publisher(), SLAM->get_map_publisher());
+//     return viewer;
+// //   return viewer(stella_vslam::util::yaml_optional_ref(cfg->yaml_node_, "PangolinViewer"), &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
+// }
+
 /*
  * Python bindings, module stella_vslam
  * Minimum requirement for stella_vslam operation: some functions in classes system and config.
@@ -428,13 +435,31 @@ PYBIND11_MODULE(stella_vslam, m){
         .def("terminate_is_requested", &system::terminate_is_requested)
         .def("request_terminate", &system::request_terminate)
 
-        .def("yaml_optional_ref", &stella_vslam::util::yaml_optional_ref)
+        // .def("yaml_optional_ref", &stella_vslam::util::yaml_optional_ref)
         ;
 
+    // py::class_<data::map_database>(m, "map_database")
+    //     .def(py::init<>())
+    //     ;
+
+    // py::class_<publish::map_publisher>(m, "map_publisher")
+    //     .def(py::init<const std::shared_ptr<config>&, data::map_database*>(), py::arg("cfg"), py::arg("map_db"))
+    //     ;
+
+    // py::class_<publish::frame_publisher>(m, "frame_publisher")
+    //     .def(py::init<const std::shared_ptr<config>&, data::map_database*, const unsigned int>(), py::arg("cfg"), py::arg("map_db"), 
+    //     py::arg("img_width") = 1024)
+    //     ;
+
     py::class_<pangolin_viewer::viewer>(m, "viewer")
-        .def(py::init<const YAML::Node&, stella_vslam::system*, const std::shared_ptr<stella_vslam::publish::frame_publisher>&, 
-            const std::shared_ptr<stella_vslam::publish::map_publisher>&>(), 
-            py::arg("yaml_node"), py::arg("system"), py::arg("frame_publisher"), py::arg("map_publisher"))
+        // const YAML::Node&, stella_vslam::system*, const std::shared_ptr<stella_vslam::publish::frame_publisher>&, const std::shared_ptr<stella_vslam::publish::map_publisher>&
+        // .def(py::init(&createViewerInstance), 
+        
+        //     py::arg("yaml_node"), py::arg("system"), py::arg("frame_publisher"), py::arg("map_publisher"))
+        .def(py::init([](const YAML::Node& yaml_node_, stella_vslam::system* SLAM)  
+        {  
+            return new pangolin_viewer::viewer(yaml_node_, SLAM, SLAM->get_frame_publisher(), SLAM->get_map_publisher());;
+        }))
         
         .def("run", &pangolin_viewer::viewer::run)
         .def("request_terminate", &pangolin_viewer::viewer::request_terminate);
