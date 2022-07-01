@@ -14,6 +14,7 @@
 #include <opencv2/core/types.hpp>
 #include <opencv2/core/utility.hpp>
 #include <opencv2/core/core.hpp>
+#include <thread>
 
 namespace py = pybind11;
 
@@ -449,7 +450,15 @@ PYBIND11_MODULE(stella_vslam, m){
         // https://stackoverflow.com/questions/60410178/how-to-invoke-python-function-as-a-callback-inside-c-thread-using-pybind11
         // Python GIL pervents us from parallelizing SLAM and the viewer using threads. We allow parallelization by adding a call guard
         .def("run", &pangolin_viewer::viewer::run, py::call_guard<py::gil_scoped_release>())
-        .def("request_terminate", &pangolin_viewer::viewer::request_terminate);
+        .def("request_terminate", &pangolin_viewer::viewer::request_terminate)
+        .def("run_in_new_thread", [](pangolin_viewer::viewer &self){                
+                std::thread thread([&]() {
+                    std::cout << "Running viewer" << "\n";
+                    self.run();
+                });
+                thread.detach();                
+        }, py::call_guard<py::gil_scoped_release>())
+        ;
 
     py::class_<YAML::Node>(m, "YamlNode")
         .def(py::init<const std::string &>())
