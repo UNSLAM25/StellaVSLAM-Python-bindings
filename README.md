@@ -18,10 +18,12 @@ In order to get a **stellavslam** module you can import from Python, you need to
 A makefile is included to simplify the compilation process. You can (or should) modify it in the following cases:
 
 * If you have OpenCV version 4 or greater installed, add the following include directory
-    -I/usr/local/include/opencv4
+
+        -I/usr/local/include/opencv4
 
 * If you plan on using DBOW2, add the following parameter in CXXFLAGS:
-    -DUSE_DBOW2
+
+        -DUSE_DBOW2
 
 The result of the compilation process is a module in a form of a shared library, like:
 
