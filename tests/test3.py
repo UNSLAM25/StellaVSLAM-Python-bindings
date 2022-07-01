@@ -19,49 +19,64 @@ import stella_vslam
 import cv2 as cv
 import sys
 import argparse
+import threading
 
-# Some arguments from run_video_slam.cc
-parser = argparse.ArgumentParser()
-parser.add_argument("-v", "--vocab", help="vocabulary file path", default="./orb_vocab.dbow2")
-parser.add_argument("-m", "--video", help="video file path", required=True)
-parser.add_argument("-c", "--config", help="config file path", default="./config.yaml")
-parser.add_argument("-p", "--map_db", help="store a map database at this path after SLAM")
-parser.add_argument("-f", "--factor", help="scale factor to show video in window - doesn't affect stella_vslam", default=0.5, type=float)
-args = parser.parse_args()
+def slam_thread():
+    
+    pose = []
+    timestamp = 0.0
+    print("Entering the video feed loop.")
+    print("You should soon see the video in a window, and the 4x4 pose matrix on this terminal.")
+    print("ESC to quit (focus on window: click on feeding frame window, then press ESC).")
 
-config = stella_vslam.config(config_file_path=args.config)
-SLAM = stella_vslam.system(cfg=config, vocab_file_path=args.vocab)
-print(config.yaml_node_)
-VIEWER = stella_vslam.viewer(SLAM.yaml_optional_ref(config.yaml_node_, "PangolinViewer"), SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher())
-SLAM.startup()
-print("stella_vslam up and operational.")
+    is_not_end = True
+    while(is_not_end):
+        is_not_end, frame = video.read()    
+        if(frame.size):
+            cv.imshow("Feeding frame", cv.resize(frame, None, fx=frameShowFactor, fy=frameShowFactor))        
+            pose = SLAM.feed_monocular_frame(frame, timestamp) # fake timestamp to keep it simple
+        if((timestamp % 30) == 0):
+            print("Timestamp", timestamp, ", Pose:")
+            
+            # Format pose matrix with only a few decimals
+            for row in pose:
+                for data in row:
+                    sys.stdout.write('{:9.1f}'.format(data))
+                print()
+        timestamp += 1
+        key = cv.waitKey(1)  # Needed to refresh imshow window
+        if(key == 27):
+            # ESC, finish
+            break
 
-video = cv.VideoCapture(args.video)
-frameShowFactor = args.factor
-pose = []
-timestamp = 0.0
-print("Entering the video feed loop.")
-print("You should soon see the video in a window, and the 4x4 pose matrix on this terminal.")
-print("ESC to quit (focus on window: click on feeding frame window, then press ESC).")
 
-is_not_end = True
-while(is_not_end):
-    is_not_end, frame = video.read()    
-    if(frame.size):
-        cv.imshow("Feeding frame", cv.resize(frame, None, fx=frameShowFactor, fy=frameShowFactor))        
-        pose = SLAM.feed_monocular_frame(frame, timestamp) # fake timestamp to keep it simple
-    if((timestamp % 30) == 0):
-        print("Timestamp", timestamp, ", Pose:")
-        
-        # Format pose matrix with only a few decimals
-        for row in pose:
-            for data in row:
-                sys.stdout.write('{:9.1f}'.format(data))
-            print()
-    timestamp += 1
-    key = cv.waitKey(1)  # Needed to refresh imshow window
-    if(key == 27):
-        # ESC, finish
-        break
+if __name__ == "__main__":
+    # Some arguments from run_video_slam.cc
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--vocab", help="vocabulary file path", default="./orb_vocab.dbow2")
+    parser.add_argument("-m", "--video", help="video file path", required=True)
+    parser.add_argument("-c", "--config", help="config file path", default="./config.yaml")
+    parser.add_argument("-p", "--map_db", help="store a map database at this path after SLAM")
+    parser.add_argument("-f", "--factor", help="scale factor to show video in window - doesn't affect stella_vslam", default=0.5, type=float)
+    args = parser.parse_args()
 
-SLAM.shutdown()
+    config = stella_vslam.config(config_file_path=args.config)
+    global SLAM
+    SLAM = stella_vslam.system(cfg=config, vocab_file_path=args.vocab)
+    # print(config.yaml_node_)
+    # print(config.yaml_node_['PangolinViewer'])
+    # SLAM.get_frame_publisher(), SLAM.get_map_publisher()
+    VIEWER = stella_vslam.viewer(config.yaml_node_['PangolinViewer'], SLAM)
+
+    SLAM.startup()
+    print("stella_vslam up and operational.")
+    global video
+    video = cv.VideoCapture(args.video)
+    global frameShowFactor
+    frameShowFactor = args.factor
+
+    slamThreadInstance = threading.Thread(target=slam_thread)
+    slamThreadInstance.start()
+    VIEWER.run()
+    # slamThreadInstance.join()
+    SLAM.shutdown()
