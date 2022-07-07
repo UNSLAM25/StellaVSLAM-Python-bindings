@@ -338,13 +338,6 @@ PyObject* NDArrayConverter::toNDArray(const cv::Mat& m){
     return o;
 }
 
-// pangolin_viewer::viewer createViewerInstance(const YAML::Node& yaml_node_, stella_vslam::system* SLAM)
-// {
-//     pangolin_viewer::viewer viewer(yaml_node_, SLAM, SLAM->get_frame_publisher(), SLAM->get_map_publisher());
-//     return viewer;
-// //   return viewer(stella_vslam::util::yaml_optional_ref(cfg->yaml_node_, "PangolinViewer"), &SLAM, SLAM.get_frame_publisher(), SLAM.get_map_publisher());
-// }
-
 /*
  * Python bindings, module stella_vslam
  * Minimum requirement for stella_vslam operation: some functions in classes system and config.
@@ -444,14 +437,16 @@ PYBIND11_MODULE(stella_vslam, m){
     py::class_<pangolin_viewer::viewer>(m, "viewer")
         .def(py::init([](const YAML::Node& yaml_node_, stella_vslam::system* SLAM)  
         {  
-            return new pangolin_viewer::viewer(yaml_node_, SLAM, SLAM->get_frame_publisher(), SLAM->get_map_publisher());;
+            return new pangolin_viewer::viewer(yaml_node_, SLAM, SLAM->get_frame_publisher(), SLAM->get_map_publisher());
         }))
         
         // https://stackoverflow.com/questions/60410178/how-to-invoke-python-function-as-a-callback-inside-c-thread-using-pybind11
         // Python GIL pervents us from parallelizing SLAM and the viewer using threads. We allow parallelization by adding a call guard
         .def("run", &pangolin_viewer::viewer::run, py::call_guard<py::gil_scoped_release>())
         .def("request_terminate", &pangolin_viewer::viewer::request_terminate)
-        .def("run_in_new_thread", [](pangolin_viewer::viewer &self){                
+        
+        // Not recommended, but useful to test stuff and avoid the GIL
+        .def("run_in_detached_thread", [](pangolin_viewer::viewer &self){                
                 std::thread thread([&]() {
                     std::cout << "Running viewer" << "\n";
                     self.run();
