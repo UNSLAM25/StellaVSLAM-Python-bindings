@@ -1,7 +1,7 @@
 #include <Python.h>
-// #include <stella_vslam/type.h>
 #include <stella_vslam/system.h>
 #include <stella_vslam/config.h>
+#include <stella_vslam/type.h>
 #include <stella_vslam/publish/map_publisher.h>
 #include <stella_vslam/publish/frame_publisher.h>
 #include <pangolin_viewer/viewer.h>
@@ -339,6 +339,23 @@ PyObject* NDArrayConverter::toNDArray(const cv::Mat& m){
 }
 
 /*
+ * Receives a pointer to pose matrix.
+ * Returns a pair with (retval, pose)
+ * retval: true if ok, false if the pose is invalid (in this case pose and position will have uninitialized values)
+ * pose: Mat44x, automatically 4x4 float numpy ndarray
+ * 
+ * To get the 3 element position (x,y,z) in Python use pose[0:2, 3]
+ */
+std::pair<bool, stella_vslam::Mat44_t> ptr2pose(std::shared_ptr<stella_vslam::Mat44_t> pose_ptr){
+    if(pose_ptr == nullptr)
+        // No pose
+        return std::pair<bool, stella_vslam::Mat44_t>(false, stella_vslam::Mat44_t());
+    else
+        // Pose ok
+        return std::pair<bool, stella_vslam::Mat44_t>(true, (stella_vslam::Mat44_t) *pose_ptr);
+}
+
+/*
  * Python bindings, module stella_vslam
  * Minimum requirement for stella_vslam operation: some functions in classes system and config.
  * Classes, functions and arguments keep their original stella_vslam names.
@@ -362,13 +379,7 @@ PYBIND11_MODULE(stella_vslam, m){
                 py::gil_scoped_release release; 
                 std::shared_ptr<Mat44_t> matrix = self.feed_monocular_frame(img, timestamp, mask); 
                 py::gil_scoped_acquire acquire;
-                if (matrix)
-                    return *matrix;
-                else 
-                {
-                    Eigen::Matrix4d m(4,4);;
-                    return m;
-                }
+                return ptr2pose(matrix);
             }, 
             py::arg("img"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
         
@@ -376,13 +387,7 @@ PYBIND11_MODULE(stella_vslam, m){
                 py::gil_scoped_release release;
                 std::shared_ptr<Mat44_t> matrix = self.feed_stereo_frame(left_img, right_img, timestamp, mask); 
                 py::gil_scoped_acquire acquire;
-                if (matrix)
-                    return *matrix;
-                else 
-                {
-                    Eigen::Matrix4d m(4,4);;
-                    return m;
-                }
+                return ptr2pose(matrix);
             }, 
             py::arg("left_img"), py::arg("right_img"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
         
@@ -390,13 +395,7 @@ PYBIND11_MODULE(stella_vslam, m){
                 py::gil_scoped_release release;
                 std::shared_ptr<Mat44_t> matrix = self.feed_RGBD_frame(rgb_img, depthmap, timestamp, mask); 
                 py::gil_scoped_acquire acquire;
-                if (matrix)
-                    return *matrix;
-                else 
-                {
-                    Eigen::Matrix4d m(4,4);;
-                    return m;
-                }
+                return ptr2pose(matrix);
             }, 
             py::arg("rgb_img"), py::arg("depthmap"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
 
