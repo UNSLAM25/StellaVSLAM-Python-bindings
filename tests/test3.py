@@ -37,7 +37,7 @@ def run_slam():
         is_not_end, frame = video.read()    
         if(frame.size):
             # cv.imshow("Feeding frame", cv.resize(frame, None, fx=frameShowFactor, fy=frameShowFactor))        
-            pose = SLAM.feed_monocular_frame(frame, timestamp) # fake timestamp to keep it simple
+            retVal, pose = SLAM.feed_monocular_frame(frame, timestamp) # fake timestamp to keep it simple
         if((timestamp % 30) == 0):
             print("Timestamp", timestamp, ", Pose:")
             
