@@ -46,13 +46,13 @@ If there is an error related to eigen3, please execute the following command:
 If there is an error related to numpy, try this:
 
     pip install numpy
-    sudo apt-get install python-numpy
+    sudo apt-get install python3-numpy
 
-If you have any other errors, please be sure to check that you have the StellaVSLAM dependencies installed correctly. For the time being, this project has been builtd and tested with:
-* StellaVSLAM 0.3.3
-* OpenCV 3.4.16
-* Python 3.8
-* Ubuntu 20.04 LTS
+If you have any other errors, please be sure to check that you have the StellaVSLAM dependencies installed correctly. For the time being, this project has been built and tested with:
+* StellaVSLAM 0.5.0
+* OpenCV 4.10.0
+* Python 3.12
+* Ubuntu 24.04 LTS
 * (All the other dependencies of StellaVSLAM that appear on its installation page)
 
 ## Testing the module

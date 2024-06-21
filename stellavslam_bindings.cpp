@@ -1,10 +1,20 @@
+// Adjust as needed depending on which viewer you have installed
+// #define HAVE_PANGOLIN_VIEWER 1
+#define HAVE_IRIDESCENCE_VIEWER 1
+
+#ifdef HAVE_PANGOLIN_VIEWER
+#include "pangolin_viewer/viewer.h"
+#endif
+#ifdef HAVE_IRIDESCENCE_VIEWER
+#include "iridescence_viewer/viewer.h"
+#endif
+
 #include <Python.h>
 #include <stella_vslam/system.h>
 #include <stella_vslam/config.h>
 #include <stella_vslam/type.h>
 #include <stella_vslam/publish/map_publisher.h>
 #include <stella_vslam/publish/frame_publisher.h>
-#include <pangolin_viewer/viewer.h>
 #include "pybind11/stl.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
@@ -433,6 +443,30 @@ PYBIND11_MODULE(stella_vslam, m){
         .def("request_terminate", &system::request_terminate)
         ;
 
+    #ifdef HAVE_IRIDESCENCE_VIEWER
+    py::class_<iridescence_viewer::viewer>(m, "viewer")
+        .def(py::init([](const YAML::Node& yaml_node_, stella_vslam::system* SLAM)  
+        {  
+            return new iridescence_viewer::viewer(yaml_node_, SLAM->get_frame_publisher(), SLAM->get_map_publisher());
+        }))
+        
+        // https://stackoverflow.com/questions/60410178/how-to-invoke-python-function-as-a-callback-inside-c-thread-using-pybind11
+        // Python GIL pervents us from parallelizing SLAM and the viewer using threads. We allow parallelization by adding a call guard
+        .def("run", &iridescence_viewer::viewer::run, py::call_guard<py::gil_scoped_release>())
+        .def("request_terminate", &iridescence_viewer::viewer::request_terminate)
+        
+        // Not recommended, but useful to test stuff and avoid the GIL
+        .def("run_in_detached_thread", [](iridescence_viewer::viewer &self){                
+                std::thread thread([&]() {
+                    std::cout << "Running viewer" << "\n";
+                    self.run();
+                });
+                thread.detach();                
+        }, py::call_guard<py::gil_scoped_release>())
+        ;
+    #endif
+
+    #ifdef HAVE_PANGOLIN_VIEWER
     py::class_<pangolin_viewer::viewer>(m, "viewer")
         .def(py::init([](const YAML::Node& yaml_node_, stella_vslam::system* SLAM)  
         {  
@@ -453,6 +487,7 @@ PYBIND11_MODULE(stella_vslam, m){
                 thread.detach();                
         }, py::call_guard<py::gil_scoped_release>())
         ;
+    #endif
 
     py::class_<YAML::Node>(m, "YamlNode")
         .def(py::init<const std::string &>())
