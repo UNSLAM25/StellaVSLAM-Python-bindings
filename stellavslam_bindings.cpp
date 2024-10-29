@@ -15,6 +15,7 @@
 #include <stella_vslam/type.h>
 #include <stella_vslam/publish/map_publisher.h>
 #include <stella_vslam/publish/frame_publisher.h>
+#include <stella_vslam/data/frame_observation.h>
 #include "pybind11/stl.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
@@ -408,6 +409,35 @@ PYBIND11_MODULE(stella_vslam, m){
                 return ptr2pose(matrix);
             }, 
             py::arg("rgb_img"), py::arg("depthmap"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
+
+        // Features from frame_observation
+        .def("get_keypoints", [](stella_vslam::system &self) {
+                py::gil_scoped_release release; 
+                auto kps = self.get_currentframe_observation()->undist_keypts_; 
+                py::gil_scoped_acquire acquire;
+                return kps;
+            })
+
+        .def("get_descriptors", [](stella_vslam::system &self) {
+                py::gil_scoped_release release; 
+                auto descriptors = self.get_currentframe_observation()->descriptors_; 
+                py::gil_scoped_acquire acquire;
+                return descriptors;
+            })
+
+        .def("get_bearings", [](stella_vslam::system &self) {
+                py::gil_scoped_release release; 
+                auto bearings = self.get_currentframe_observation()->bearings_; 
+                py::gil_scoped_acquire acquire;
+                return bearings;
+            })
+
+        .def("get_keypt_indices_in_cells", [](stella_vslam::system &self) {
+                py::gil_scoped_release release; 
+                auto keypt_indices_in_cells = self.get_currentframe_observation()->keypt_indices_in_cells_; 
+                py::gil_scoped_acquire acquire;
+                return keypt_indices_in_cells;
+            })
 
         // Map save & load
         .def("load_map_database", &system::load_map_database, py::arg("path"))
