@@ -13,18 +13,20 @@
 #include <stella_vslam/system.h>
 #include <stella_vslam/config.h>
 #include <stella_vslam/type.h>
+#include <stella_vslam/tracking_module.h>
 #include <stella_vslam/publish/map_publisher.h>
 #include <stella_vslam/publish/frame_publisher.h>
 #include <stella_vslam/data/frame_observation.h>
+#include <stella_vslam/data/frame.h>
 #include "pybind11/stl.h"
 #include "pybind11/pybind11.h"
 #include "pybind11/eigen.h"
-// #include "nlohmann/json_fwd.hpp"
 #include "yaml-cpp/yaml.h"
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/core/utility.hpp>
 #include <opencv2/core/core.hpp>
+#include <opencv2/core/features2d.hpp>
 #include <thread>
 
 namespace py = pybind11;
@@ -380,6 +382,16 @@ PYBIND11_MODULE(stella_vslam, m){
         .def(py::init<const YAML::Node&, const std::string&>(), py::arg("yaml_node"), py::arg("config_file_path") = "")
         .def_readonly("yaml_node_", &config::yaml_node_);
 
+    py::class_<stella_vslam::data::frame_observation>(m, "frame_observation")
+        .def_readonly("descriptors", &frame_observation::descriptors_)
+        .def_readonly("undist_keypts", &frame_observation::undist_keypts_)
+        .def_readonly("bearings", &frame_observation::bearings_)
+        .def_readonly("stereo_x_right", &frame_observation::stereo_x_right_)
+        .def_readonly("depths", &frame_observation::depths_)
+        .def_readonly("keypt_indices_in_cells", &frame_observation::keypt_indices_in_cells_)
+        .def_readonly("num_grid_cols", &frame_observation::num_grid_cols_)
+        .def_readonly("num_grid_rows", &frame_observation::num_grid_rows_)
+
     py::class_<stella_vslam::system>(m, "system")
         // Init & finish
         .def(py::init<const std::shared_ptr<config>&, const std::string&>(), py::arg("cfg"), py::arg("vocab_file_path"))
@@ -410,33 +422,11 @@ PYBIND11_MODULE(stella_vslam, m){
             }, 
             py::arg("rgb_img"), py::arg("depthmap"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
 
-        // Features from frame_observation
-        .def("get_keypoints", [](stella_vslam::system &self) {
+        .def("get_frame_observation", [](stella_vslam::system &self) {
                 py::gil_scoped_release release; 
-                auto kps = self.get_currentframe_observation()->undist_keypts_; 
+                auto obs = self.get_currentframe_observation(); 
                 py::gil_scoped_acquire acquire;
-                return kps;
-            })
-
-        .def("get_descriptors", [](stella_vslam::system &self) {
-                py::gil_scoped_release release; 
-                auto descriptors = self.get_currentframe_observation()->descriptors_; 
-                py::gil_scoped_acquire acquire;
-                return descriptors;
-            })
-
-        .def("get_bearings", [](stella_vslam::system &self) {
-                py::gil_scoped_release release; 
-                auto bearings = self.get_currentframe_observation()->bearings_; 
-                py::gil_scoped_acquire acquire;
-                return bearings;
-            })
-
-        .def("get_keypt_indices_in_cells", [](stella_vslam::system &self) {
-                py::gil_scoped_release release; 
-                auto keypt_indices_in_cells = self.get_currentframe_observation()->keypt_indices_in_cells_; 
-                py::gil_scoped_acquire acquire;
-                return keypt_indices_in_cells;
+                return obs;
             })
 
         // Map save & load
