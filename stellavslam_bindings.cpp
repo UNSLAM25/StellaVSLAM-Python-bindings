@@ -18,15 +18,15 @@
 #include <stella_vslam/publish/frame_publisher.h>
 #include <stella_vslam/data/frame_observation.h>
 #include <stella_vslam/data/frame.h>
-#include "pybind11/stl.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/eigen.h"
-#include "yaml-cpp/yaml.h"
+#include <pybind11/stl.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
+#include <yaml-cpp/yaml.h>
 #include <opencv2/core/mat.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/core/utility.hpp>
 #include <opencv2/core/core.hpp>
-#include <opencv2/core/features2d.hpp>
+#include <opencv2/features2d/features2d.hpp>
 #include <thread>
 
 namespace py = pybind11;
@@ -383,14 +383,14 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("yaml_node_", &config::yaml_node_);
 
     py::class_<stella_vslam::data::frame_observation>(m, "frame_observation")
-        .def_readonly("descriptors", &frame_observation::descriptors_)
-        .def_readonly("undist_keypts", &frame_observation::undist_keypts_)
-        .def_readonly("bearings", &frame_observation::bearings_)
-        .def_readonly("stereo_x_right", &frame_observation::stereo_x_right_)
-        .def_readonly("depths", &frame_observation::depths_)
-        .def_readonly("keypt_indices_in_cells", &frame_observation::keypt_indices_in_cells_)
-        .def_readonly("num_grid_cols", &frame_observation::num_grid_cols_)
-        .def_readonly("num_grid_rows", &frame_observation::num_grid_rows_)
+        .def_readonly("descriptors", &data::frame_observation::descriptors_)
+        .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_)
+        .def_readonly("bearings", &data::frame_observation::bearings_)
+        .def_readonly("stereo_x_right", &data::frame_observation::stereo_x_right_)
+        .def_readonly("depths", &data::frame_observation::depths_)
+        .def_readonly("keypt_indices_in_cells", &data::frame_observation::keypt_indices_in_cells_)
+        .def_readonly("num_grid_cols", &data::frame_observation::num_grid_cols_)
+        .def_readonly("num_grid_rows", &data::frame_observation::num_grid_rows_);
 
     py::class_<stella_vslam::system>(m, "system")
         // Init & finish
@@ -424,7 +424,7 @@ PYBIND11_MODULE(stella_vslam, m){
 
         .def("get_frame_observation", [](stella_vslam::system &self) {
                 py::gil_scoped_release release; 
-                auto obs = self.get_currentframe_observation(); 
+                data::frame_observation *obs = &self.tracker_->curr_frm_.frm_obs_; 
                 py::gil_scoped_acquire acquire;
                 return obs;
             })

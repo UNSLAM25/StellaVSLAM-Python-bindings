@@ -15,6 +15,7 @@ In order to get a **stellavslam** module you can import from Python, you need to
 * install [StellaVSLAM](https://stella-cv.readthedocs.io/en/latest/installation.html#chapter-installation)
 * install [PyBind11](https://github.com/pybind/pybind11)
   * like ```pip install pybind11```
+  * or ```sudo apt install pybind11-dev```
 * compile _stellavslam-bindings.cpp_ 
 
 A makefile is included to simplify the compilation process. You can (or should) modify it in the following cases:
@@ -23,9 +24,9 @@ A makefile is included to simplify the compilation process. You can (or should) 
 
         -I/usr/local/include/opencv4
 
-* If you plan on using DBOW2, add the following parameter in CXXFLAGS:
-
-        -DUSE_DBOW2
+```
+g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3-config --includes) -I/usr/local/include/stella_vslam/3rd/json/include -I/usr/local/include/eigen3 -I/usr/local/include/opencv4 ./stella_vslam_bindings.cpp -o stellavslam$(python3-config --extension-suffix) -lstellavslam
+```
 
 The result of the compilation process is a module in a form of a shared library, like:
 
