@@ -25,7 +25,12 @@ A makefile is included to simplify the compilation process. You can (or should) 
         -I/usr/local/include/opencv4
 
 ```
-g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3-config --includes) -I/usr/local/include/stella_vslam/3rd/json/include -I/usr/local/include/eigen3 -I/usr/local/include/opencv4 ./stella_vslam_bindings.cpp -o stellavslam$(python3-config --extension-suffix) -lstellavslam
+g++ -O3 -Wall -shared -std=c++11 -fPIC $(python3-config --includes) -I/usr/local/include/stella_vslam/3rd/json/include -I/usr/local/include/eigen3 -I/usr/local/include/opencv4 ./stella_vslam_bindings.cpp -o stellavslam$(python3-config --extension-suffix) -lstella_vslam
+```
+
+Iridescence viewer:
+```
+g++ -O3 -Wall -shared -std=c++17 -fPIC $(python3-config --includes) -I/usr/local/include/stella_vslam/3rd/json/include -I/usr/include/eigen3 -I/usr/local/include/opencv4 -I/usr/local/include/stella_vslam/3rd/spdlog/include -I/usr/lib/python3/dist-packages/numpy/core/include ./stellavslam_bindings.cpp -o stella_vslam$(python3-config --extension-suffix) -lstella_vslam -liridescence_viewer
 ```
 
 The result of the compilation process is a module in a form of a shared library, like:

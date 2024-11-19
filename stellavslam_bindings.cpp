@@ -1,6 +1,6 @@
 // Adjust as needed depending on which viewer you have installed
 // #define HAVE_PANGOLIN_VIEWER 1
-#define HAVE_IRIDESCENCE_VIEWER 1
+//#define HAVE_IRIDESCENCE_VIEWER 1
 
 #ifdef HAVE_PANGOLIN_VIEWER
 #include "pangolin_viewer/viewer.h"
@@ -383,6 +383,7 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("yaml_node_", &config::yaml_node_);
 
     py::class_<stella_vslam::data::frame_observation>(m, "frame_observation")
+        //.def("__repr__", [](const cv2::KeyPoint &kp){return "Frame_observation: " + kp.descriptors.rows + "features.";})
         .def_readonly("descriptors", &data::frame_observation::descriptors_)
         .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_)
         .def_readonly("bearings", &data::frame_observation::bearings_)
@@ -391,6 +392,17 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("keypt_indices_in_cells", &data::frame_observation::keypt_indices_in_cells_)
         .def_readonly("num_grid_cols", &data::frame_observation::num_grid_cols_)
         .def_readonly("num_grid_rows", &data::frame_observation::num_grid_rows_);
+    
+    py::class_<cv2::KeyPoint>(m, "KeyPoint")
+        //.def("__repr__", [](const cv2::KeyPoint &kp){return "Keypoint";})
+        .def_readonly("angle", &cv2::KeyPoint::angle)
+        .def_readonly("class_id", &cv2::KeyPoint::class_id)
+        .def_readonly("octave", &cv2::KeyPoint::octave)
+        .def_readonly("response", &cv2::KeyPoint::response)
+        .def_readonly("size", &cv2::KeyPoint::size)
+        .def_readonly("x", &cv2::KeyPoint::pt::x)
+        .def_readonly("x", &cv2::KeyPoint::pt::y);
+        
 
     py::class_<stella_vslam::system>(m, "system")
         // Init & finish
@@ -428,6 +440,26 @@ PYBIND11_MODULE(stella_vslam, m){
                 py::gil_scoped_acquire acquire;
                 return obs;
             })
+
+        .def("get_state", [](stella_vslam::system &self){
+            auto tracking_state = self.tracker_->tracking_state_;
+            std::string state;
+            switch (tracking_state){
+            case stella_vslam::tracker_state_t::Initializing:
+                return "Initializing";
+                break;
+            case stella_vslam::tracker_state_t::Tracking:
+                return "Tracking";
+                break;
+            case stella_vslam::tracker_state_t::Lost:
+                return "Lost";
+                break;
+            
+            default:
+                return "Unknown";
+                break;
+            }
+        })
 
         // Map save & load
         .def("load_map_database", &system::load_map_database, py::arg("path"))
