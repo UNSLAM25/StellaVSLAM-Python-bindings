@@ -10,6 +10,10 @@
 #endif
 
 #include <Python.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+#include <pybind11/eigen.h>
 #include <stella_vslam/system.h>
 #include <stella_vslam/config.h>
 #include <stella_vslam/type.h>
@@ -18,15 +22,10 @@
 #include <stella_vslam/publish/frame_publisher.h>
 #include <stella_vslam/data/frame_observation.h>
 #include <stella_vslam/data/frame.h>
-#include <pybind11/stl.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/eigen.h>
 #include <yaml-cpp/yaml.h>
-//#include <opencv2/core/mat.hpp>
-//#include <opencv2/core/types.hpp>
-//#include <opencv2/core/utility.hpp>
-//#include <opencv2/core/core.hpp>
-#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/opencv.hpp>
+//#include <sstream>
+#include <string>
 #include <thread>
 
 namespace py = pybind11;
@@ -382,18 +381,7 @@ PYBIND11_MODULE(stella_vslam, m){
         .def(py::init<const YAML::Node&, const std::string&>(), py::arg("yaml_node"), py::arg("config_file_path") = "")
         .def_readonly("yaml_node_", &config::yaml_node_);
 
-    py::class_<stella_vslam::data::frame_observation>(m, "frame_observation")
-        //.def("__repr__", [](const cv::KeyPoint &kp){return "Frame_observation: " + kp.descriptors.rows + "features.";})
-        .def_readonly("descriptors", &data::frame_observation::descriptors_)
-        .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_)
-        .def_readonly("bearings", &data::frame_observation::bearings_)
-        .def_readonly("stereo_x_right", &data::frame_observation::stereo_x_right_)
-        .def_readonly("depths", &data::frame_observation::depths_)
-        .def_readonly("keypt_indices_in_cells", &data::frame_observation::keypt_indices_in_cells_)
-        .def_readonly("num_grid_cols", &data::frame_observation::num_grid_cols_)
-        .def_readonly("num_grid_rows", &data::frame_observation::num_grid_rows_);
-    
-    py::class_<cv::KeyPoint>(m, "KeyPoint")
+/*    py::class_<cv::KeyPoint>(m, "KeyPoint")
         //.def("__repr__", [](const cv::KeyPoint &kp){return "Keypoint";})
         .def_readonly("angle",    &cv::KeyPoint::angle)
         .def_readonly("class_id", &cv::KeyPoint::class_id)
@@ -402,8 +390,26 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("size",     &cv::KeyPoint::size)
         .def_property_readonly("x", [](const cv::KeyPoint &kp) {return kp.pt.x;})
         .def_property_readonly("y", [](const cv::KeyPoint &kp) {return kp.pt.y;});
-        
+*/       
+    // In order to bind with python-opencv's cv2::KeyPoint, this container must be registered
+    // Used automatically in frame_observation.undist_keypts()
+    py::bind_vector< std::vector< cv::KeyPoint > >(m, "KeyPointVector");
 
+    py::class_<data::frame_observation>(m, "frame_observation")
+        .def("__repr__", [](const data::frame_observation &fo){
+            return "Frame_observation: " + std::to_string(fo.descriptors_.rows) + " features.";
+            //auto repr = "Frame_observation: " << fo.descriptors_.rows << " features.";
+            //return repr.str();
+        })
+        .def_readonly("descriptors", &data::frame_observation::descriptors_)
+        .def_readonly("bearings", &data::frame_observation::bearings_)
+        .def_readonly("stereo_x_right", &data::frame_observation::stereo_x_right_)
+        .def_readonly("depths", &data::frame_observation::depths_)
+        .def_readonly("keypt_indices_in_cells", &data::frame_observation::keypt_indices_in_cells_)
+        .def_readonly("num_grid_cols", &data::frame_observation::num_grid_cols_)
+        .def_readonly("num_grid_rows", &data::frame_observation::num_grid_rows_)
+        .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_);
+    
     py::class_<stella_vslam::system>(m, "system")
         // Init & finish
         .def(py::init<const std::shared_ptr<config>&, const std::string&>(), py::arg("cfg"), py::arg("vocab_file_path"))
@@ -441,6 +447,7 @@ PYBIND11_MODULE(stella_vslam, m){
                 return obs;
             })
 
+        // Tracker state, it can be improved with system states before startup and after shutdown
         .def("get_state", [](stella_vslam::system &self){
             auto tracking_state = self.tracker_->tracking_state_;
             std::string state;
