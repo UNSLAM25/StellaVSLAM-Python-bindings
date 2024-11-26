@@ -22,10 +22,10 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/eigen.h>
 #include <yaml-cpp/yaml.h>
-#include <opencv2/core/mat.hpp>
-#include <opencv2/core/types.hpp>
-#include <opencv2/core/utility.hpp>
-#include <opencv2/core/core.hpp>
+//#include <opencv2/core/mat.hpp>
+//#include <opencv2/core/types.hpp>
+//#include <opencv2/core/utility.hpp>
+//#include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <thread>
 
@@ -383,7 +383,7 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("yaml_node_", &config::yaml_node_);
 
     py::class_<stella_vslam::data::frame_observation>(m, "frame_observation")
-        //.def("__repr__", [](const cv2::KeyPoint &kp){return "Frame_observation: " + kp.descriptors.rows + "features.";})
+        //.def("__repr__", [](const cv::KeyPoint &kp){return "Frame_observation: " + kp.descriptors.rows + "features.";})
         .def_readonly("descriptors", &data::frame_observation::descriptors_)
         .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_)
         .def_readonly("bearings", &data::frame_observation::bearings_)
@@ -393,15 +393,15 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("num_grid_cols", &data::frame_observation::num_grid_cols_)
         .def_readonly("num_grid_rows", &data::frame_observation::num_grid_rows_);
     
-    py::class_<cv2::KeyPoint>(m, "KeyPoint")
-        //.def("__repr__", [](const cv2::KeyPoint &kp){return "Keypoint";})
-        .def_readonly("angle", &cv2::KeyPoint::angle)
-        .def_readonly("class_id", &cv2::KeyPoint::class_id)
-        .def_readonly("octave", &cv2::KeyPoint::octave)
-        .def_readonly("response", &cv2::KeyPoint::response)
-        .def_readonly("size", &cv2::KeyPoint::size)
-        .def_readonly("x", &cv2::KeyPoint::pt::x)
-        .def_readonly("x", &cv2::KeyPoint::pt::y);
+    py::class_<cv::KeyPoint>(m, "KeyPoint")
+        //.def("__repr__", [](const cv::KeyPoint &kp){return "Keypoint";})
+        .def_readonly("angle",    &cv::KeyPoint::angle)
+        .def_readonly("class_id", &cv::KeyPoint::class_id)
+        .def_readonly("octave",   &cv::KeyPoint::octave)
+        .def_readonly("response", &cv::KeyPoint::response)
+        .def_readonly("size",     &cv::KeyPoint::size)
+        .def_property_readonly("x", [](const cv::KeyPoint &kp) {return kp.pt.x;})
+        .def_property_readonly("y", [](const cv::KeyPoint &kp) {return kp.pt.y;});
         
 
     py::class_<stella_vslam::system>(m, "system")
@@ -435,7 +435,7 @@ PYBIND11_MODULE(stella_vslam, m){
             py::arg("rgb_img"), py::arg("depthmap"), py::arg("timestamp"), py::arg("mask") = cv::Mat{})
 
         .def("get_frame_observation", [](stella_vslam::system &self) {
-                py::gil_scoped_release release; 
+                py::gil_scoped_release release;
                 data::frame_observation *obs = &self.tracker_->curr_frm_.frm_obs_; 
                 py::gil_scoped_acquire acquire;
                 return obs;
