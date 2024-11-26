@@ -1,6 +1,5 @@
 // Adjust as needed depending on which viewer you have installed
-// #define HAVE_PANGOLIN_VIEWER 1
-//#define HAVE_IRIDESCENCE_VIEWER 1
+// Should define HAVE_IRIDESCENCE_VIEWER or HAVE_PANGOLIN_VIEWER in g++ command line
 
 #ifdef HAVE_PANGOLIN_VIEWER
 #include "pangolin_viewer/viewer.h"
@@ -24,7 +23,6 @@
 #include <stella_vslam/data/frame.h>
 #include <yaml-cpp/yaml.h>
 #include <opencv2/opencv.hpp>
-//#include <sstream>
 #include <string>
 #include <thread>
 
@@ -54,10 +52,10 @@ public:
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/ndarrayobject.h>
 
-#if PY_VERSION_HEX >= 0x03000000
+//#if PY_VERSION_HEX >= 0x03000000
     #define PyInt_Check PyLong_Check
     #define PyInt_AsLong PyLong_AsLong
-#endif
+//#endif
 
 struct Tmp {
     const char * name;
@@ -131,11 +129,15 @@ public:
         return u;
     }
 
-#if CV_MAJOR_VERSION < 4
-    UMatData* allocate(int dims0, const int* sizes, int type, void* data, size_t* step, int flags, UMatUsageFlags usageFlags) const
-#else
+// CV_MAJOR_VERSION is defined in opencv.hpp
+#ifndef CV_MAJOR_VERSION    // Assume OpenCV >= 4
     UMatData* allocate(int dims0, const int* sizes, int type, void* data, size_t* step, AccessFlag flags, UMatUsageFlags usageFlags) const
+#elif CV_MAJOR_VERSION > 3  // OpenCV >= 4, same as before
+    UMatData* allocate(int dims0, const int* sizes, int type, void* data, size_t* step, AccessFlag flags, UMatUsageFlags usageFlags) const
+#else // OpenCV < 4
+    UMatData* allocate(int dims0, const int* sizes, int type, void* data, size_t* step, int flags, UMatUsageFlags usageFlags) const
 #endif
+
     {
         if( data != 0 ){
             CV_Error(Error::StsAssert, "The data should normally be NULL!");
@@ -381,7 +383,7 @@ PYBIND11_MODULE(stella_vslam, m){
         .def(py::init<const YAML::Node&, const std::string&>(), py::arg("yaml_node"), py::arg("config_file_path") = "")
         .def_readonly("yaml_node_", &config::yaml_node_);
 
-/*    py::class_<cv::KeyPoint>(m, "KeyPoint")
+    py::class_<cv::KeyPoint>(m, "KeyPoint")
         //.def("__repr__", [](const cv::KeyPoint &kp){return "Keypoint";})
         .def_readonly("angle",    &cv::KeyPoint::angle)
         .def_readonly("class_id", &cv::KeyPoint::class_id)
@@ -390,16 +392,10 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("size",     &cv::KeyPoint::size)
         .def_property_readonly("x", [](const cv::KeyPoint &kp) {return kp.pt.x;})
         .def_property_readonly("y", [](const cv::KeyPoint &kp) {return kp.pt.y;});
-*/       
-    // In order to bind with python-opencv's cv2::KeyPoint, this container must be registered
-    // Used automatically in frame_observation.undist_keypts()
-    py::bind_vector< std::vector< cv::KeyPoint > >(m, "KeyPointVector");
 
     py::class_<data::frame_observation>(m, "frame_observation")
         .def("__repr__", [](const data::frame_observation &fo){
             return "Frame_observation: " + std::to_string(fo.descriptors_.rows) + " features.";
-            //auto repr = "Frame_observation: " << fo.descriptors_.rows << " features.";
-            //return repr.str();
         })
         .def_readonly("descriptors", &data::frame_observation::descriptors_)
         .def_readonly("bearings", &data::frame_observation::bearings_)
@@ -408,7 +404,13 @@ PYBIND11_MODULE(stella_vslam, m){
         .def_readonly("keypt_indices_in_cells", &data::frame_observation::keypt_indices_in_cells_)
         .def_readonly("num_grid_cols", &data::frame_observation::num_grid_cols_)
         .def_readonly("num_grid_rows", &data::frame_observation::num_grid_rows_)
-        .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_);
+        .def_readonly("undist_keypts", &data::frame_observation::undist_keypts_)
+        .def_property_readonly("undist_keypts",
+            [](const data::frame_observation &fo) -> const std::vector<cv::KeyPoint>& {
+                return fo.undist_keypts_;
+            }, py::return_value_policy::reference_internal
+        )
+        ;
     
     py::class_<stella_vslam::system>(m, "system")
         // Init & finish
